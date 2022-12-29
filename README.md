@@ -78,7 +78,42 @@ If you are using ReactJS, you should use the global a `Xumm` instance to access 
  * component to re-render every time the state changes
  * and breaks the sdk
  */
-const xumm = XummAuthService.getXumm();
+
+const make = async () => {
+    const xumm = await new Xumm(xummConfig.AppId)
+
+    console.log("====== XUMM runtime", xumm.runtime);
+
+    if (xumm.runtime.xapp) {
+        console.log("XAPP");
+        xumm.user.account.then(account => document.getElementById('account').innerText = account)
+        xumm.xapp.on('destination', data => {
+          console.log('A-xapp-destination@', data.destination?.name, data.destination?.address, data?.reason)
+        })
+        xumm.on('destination', data => {
+          console.log('B-xapp-destination@', data.destination?.name, data.destination?.address, data?.reason)
+        })
+    }
+
+
+    if (xumm.runtime.browser && !xumm.runtime.xapp) {
+        console.log("WEBAPP");
+        xumm.on("error", (error) => {
+          console.log("error", error)
+        })
+        xumm.on("success", async () => {
+          console.log('success', await xumm.user.account)
+        })
+        xumm.on("retrieved", async () => {
+          console.log("Retrieved: from localStorage or mobile browser redirect", await xumm.user.account)
+        })
+      }
+
+      return xumm;
+
+};
+
+const xumm = make();
 ```
 
 The xumm SDK is a promise based SDK, so you need to use the `then` method to get the SDK.
@@ -148,161 +183,3 @@ xumm.then((xummSDK) => {
     xummSDK.xapp.openSignRequest({ uuid: res.data.uuid });
 });    
 ```
-
-Then client can then use the websocket to monitor the status of the transaction.
-
-In the example below the API is getting called to create a payment payload on the backend (instead of in the browser) because some backend orchestration needs to be done at time of payment. *This* is what makes this application "hybrid" becuase payloads are being generated both using the xumm SDK on the front and backends, all protected by the xumm JWT.
-
-```javascript
-PayloadService.getPayment(formState.prompt).then((res) => {  
-    console.log("payment response", res.data);
-    setStage(1);
-    setPayment(res.data);
-    setModalTitle('Use xumm wallet to sign the payment transaction');
-
-    const client = new W3CWebSocket(res.data.refs.websocket_status);
-
-    client.onopen = () => {
-        console.log('WebSocket Client Connected');
-    };
-
-    client.onclose = () => {
-        console.log('WebSocket Client Closed');
-    };
-
-    client.onmessage = (message) => {
-        const dataFromServer = JSON.parse(message.data);
-
-        let keys = Object.keys(dataFromServer);
-        if (
-            keys.includes('payload_uuidv4') && 
-            keys.includes('signed') && 
-            dataFromServer.signed === true
-        ){
-            setStage(-1);
-            setModalTitle(`Payment signed, generating image (${remaining+1} remaining)`);
-            PayloadService.postGenerate(dataFromServer.payload_uuidv4).then((res) => {
-                console.log(res.data);
-                setGenerateURL(res.data.img_src);
-                setDataFromServer(dataFromServer);
-                client.close();
-                setStage(2);
-                setModalTitle(`Select this image or generate another one (${remaining} remaining)`);
-            }).catch((err) => {
-                console.log(err);
-                setError(err);
-            });
-        };      
-        setWsclient(client);
-    }
-
-    if (xumm && isXApp) {
-    	xumm.then((xummSDK) => {
-        	xummSDK.xapp.openSignRequest({ uuid: res.data.uuid });
-	}
-    } 
-
-}).catch((err) => {
-    console.log(err);
-    setError(err);
-});
-
-```
-
-
-## Server Side JWT Backend
-
-[verification of xumm JWT](https://github.com/claytantor/niftyx-poc/blob/main/api/decorators.py#L16)
-
-```python
-@staticmethod
-def verify_jwt(jwt_token, jwks=None, kid="default"):
-
-    if jwks is None:
-        raise ValueError("jwks is required")
-
-    jwt_body = jwt.decode(jwt_token, options={"verify_signature": False})
-
-    public_keys = {}
-    for jwk in jwks['keys']:
-        kid = jwk['kid']
-        public_keys[kid] = 
-        jwt.algorithms.RSAAlgorithm.from_jwk(
-            json.dumps(jwk))
-        
-    key = public_keys[kid]
-    logger.info(f"=== kid {kid} {public_keys} {key}")
-    payload = jwt.decode(jwt_token, key, 
-        algorithms=['RS256'], audience=jwt_body['aud'],
-        issuer='https://oauth2.xumm.app')
-    
-    logger.info(f"=== payload {payload} VERIFIED")
-
-```
-
-this method gets called on incoming requests to the backend API
-
-```python
-@router.get("/account/info")
-@verify_xumm_jwt
-async def get_account_info(request: Request,  token: str = Depends(oauth2_scheme)):
-    
-    jwt_body = get_token_body(token)
-
-    xrp_network = get_xrp_network_from_jwt(jwt_body)
-    client = xrpl.clients.JsonRpcClient(xrp_network.json_rpc)
-
-    acct_info = AccountInfo(
-        account=jwt_body['sub'],
-        ledger_index="current",
-        queue=True,
-        strict=True,
-    )
-
-    response = await client.request_impl(acct_info)
-    return response.to_dict()
-```
-
-## Setup
-
-### running the web app
-
-```bash
-cd webapp
-npm install
-npm run build
-npm run serve-local
-```
-
-### running the uvicorn server
-
-You need to have a `.env` file in the root of the project with the following contents:
-
-```bash
-API_VERSION=0.1.1
-XUMM_API_KEY="<your_info>"
-XUMM_API_SECRET="<your_info>"
-NIFTYX_ADDRESS="rrnR8qAP8t..."
-BANANA_API_KEY="<your_info>"
-BANANA_MODEL_KEY="<your_info>"
-AWS_BUCKET_NAME="my-bucket-name"
-AWS_UPLOADED_IMAGES_PATH="uploaded_images"
-AWS_ACCESS_KEY_ID="<your_info>"
-AWS_SECRET_ACCESS_KEY="<your_info>"
-AWS_REGION="us-west-2"
-PINATA_API_KEY="<your_info>"
-PINATA_SECRET_KEY="<your_info>"
-PINATA_PINNING_ENDPOINT="https://api.pinata.cloud/pinning/pinJSONToIPFS"
-PINATA_OUTDIR="/home/mydir/data/out"
-XAPP_PREFIX="http://localhost:3010/xapp"
-```
-and then start the uvicorn server
-
-```bash
-#!/bin/bash
-# Usage: runapi.sh <env>
-APP_CONFIG=env/$1/api.env python -m api
-```
-
-
-
