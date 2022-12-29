@@ -45,10 +45,91 @@ const make = async () => {
 const xumm = make();
 
 
+/**
+ * xumm link handling for external links must be handled by the app
+ * sdk, so we need some way to pass the link to the app as well as 
+ * just dispay it as a link for webapp users.
+ * 
+ * links is a list of objects with the following structure:
+ * [{ 'title': 'title', 'url': 'url' }]
+ * 
+ * @param {*} param0 
+ */
+const ExternalLinksViewer = ({links, xumm, title="Important Links"}) => {
+
+  const [runtime, setRuntime] = useState();
+
+  useEffect(() => {
+    xumm.then((xummSDK) => {
+      setRuntime(xummSDK.runtime);
+    });
+  }, [xumm]);
+
+  /**
+   * this handles the xApp and webapp cases for external links
+   * 
+   * @param {*} url 
+   */
+  let handleClickedLink = (url) => {
+    if (runtime.xapp) {
+      console.log("clicked link in xApp", url);
+
+      xumm.then((xummSDK) => {
+        xummSDK.openBrowser({ url: url })
+        .then(d => {
+          // d (returned value) can be Error or return data:
+          console.log('openBrowser response:', d instanceof Error ? d.message : d)
+        })
+        .catch(e => console.log('Error:', e.message));
+      });
+
+    } else if (runtime.browser && !runtime.xapp) {
+      console.log("clicked link in Web browser", url);
+      window.open(url, "_blank");
+    }
+  };
+
+  let renderUrls = (links) => {
+    return links.map((key, index) => (
+        <div className="w-32 h-8 text-yellow-200
+          bg-slate-900 m-1 rounded p-1 break-words" key={index}>
+            <div onClick={()=>handleClickedLink(key.url)} className="text-xs font-bold text-blue-300 
+              hover:underline cursor-pointer">{key.title}</div> 
+        </div>
+    ));
+  };
+
+  return (
+    <div className="w-full flex flex-col">
+      <div className="text-2xl text-white">{title}</div>
+      <div className="flex flex-wrap min-h-[100px]">
+        {renderUrls(links)}
+      </div>
+    </div>
+  );
+};
+
+const LinkedFooter = ({xumm}) => {
+  const externalLinks = [
+    { title: 'zoetic Home', url: 'https://zoetic.xurlpay.org/' },
+    { title: 'Github', url: 'https://github.com/claytantor/zoetic-xumm' },
+    { title: 'Terms of Service', url: 'https://zoetic.xurlpay.org/tos' },
+    { title: 'Privacy Policy', url: 'https://zoetic.xurlpay.org/privacy' },
+    { title: 'Xumm-Universal-SDK', url: 'https://github.com/XRPL-Labs/Xumm-Universal-SDK' },
+    { title: 'Tailwinds CSS Docs', url: 'https://tailwindcss.com/docs/installation' },
+    { title: 'React Docs', url: 'https://reactjs.org/docs/getting-started.html' },
+  ]
+
+  return (<footer className="mt-auto sticky-footer p-2">
+    <ExternalLinksViewer links={externalLinks} xumm={xumm}/>
+    </footer>);
+
+};
+
+
 const HashedInfoViewer = ({hashedInfo, title="Hashed Data"}) => {
 
   let renderAttributes = (hashedInfo) => {
-
       if (hashedInfo) {
           const keys = Object.keys(hashedInfo);
           if (keys.length === 0) {
@@ -64,17 +145,77 @@ const HashedInfoViewer = ({hashedInfo, title="Hashed Data"}) => {
               ));
           }
       }
-
   };
 
   return (
       <>
           {hashedInfo && 
-           <div className="flex flex-col"> 
-             
+           <div className="flex flex-col">       
               <div className="flex flex-row text-heading text-2xl">{title}</div>
               <div className="flex flex-wrap w-full bg-slate-700 p-1">{renderAttributes(hashedInfo)}</div>               
           </div>}
+      </>
+  );
+};
+
+const PaymentPayloadViewer = ({payload, amountXRP=1.0, title="Payload"}) => {
+
+  const [isMobile, setIsMobile] = useState(false);
+  const [runtime, setRuntime] = useState();
+
+  /**
+   * when on a mobile webapp the user wont be able to scan 
+   * the qr code, so we need to make it easy for them
+   * to click the link and open the xumm app for sign
+   */
+  useEffect(() => {
+    if (/Mobi/.test(navigator.userAgent)) {
+      setIsMobile(true);
+    }
+    xumm.then((xummSDK) => {
+      setRuntime(xummSDK.runtime);
+    });
+  }, []);
+
+  /**
+   * only when on a mobile webapp and the user is not in the xumm app
+   * do we want to show the link to open the xumm app
+   * 
+   * @param {*} uuid 
+   * @param {*} runtime 
+   */
+  const handleSignPopup = async (uuid, runtime) => {
+    if (isMobile && runtime.browser && !runtime.xapp) {
+      window.location.href = `https://xumm.app/sign/${uuid}`;
+    } 
+  };
+
+  return (
+      <>
+          {payload &&
+            <div className="flex flex-col">
+              {payload.refs && payload.refs.qr_png &&
+                  <div className='flex flex-col w-full justify-center'>
+                    <div className='text-white text-2xl font-mono w-full text-center flex justify-center'>PAY {amountXRP} XRPL</div>
+                    <div className='text-white text-2xl font-mono w-full text-center flex justify-center'><img className="w-96 rounded" src={payload.refs.qr_png} alt="qr_code" /></div>
+                  </div>}   
+
+              { payload.refs && isMobile && 
+                <div onClick={()=>handleSignPopup(payload.uuid, runtime)} className="btn-common bg-green-800 text-white uppercase">
+                  Sign in XUMM</div> }
+              <HashedInfoViewer hashedInfo={payload} title={title}/>
+            </div>}
+      </>
+  );
+};
+
+const WebsocketMessageViewer = ({message, title="Message"}) => {
+  return (
+      <>
+          {message &&
+            <div className="flex flex-col">
+              <HashedInfoViewer hashedInfo={message} title={title}/>
+            </div>}
       </>
   );
 };
@@ -84,7 +225,6 @@ const PaymentForm = ({xumm, fromAccount}) => {
 
   const [formState, setFormState] = useState({'destination': ''});
   const [payload, setPayload] = useState(null);
-  const [isMobile, setIsMobile] = useState(false);
   const [runtime, setRuntime] = useState(null);
 
   /** state for the tx listening */
@@ -99,10 +239,6 @@ const PaymentForm = ({xumm, fromAccount}) => {
    * detect if this is a mobile device
    */
   useEffect(() => {
-    if (/Mobi/.test(navigator.userAgent)) {
-      setIsMobile(true);
-    }
-
     // get the runtime so we can launch tx listening
     // for xapp
     xumm.then(xummSDK => {
@@ -122,7 +258,6 @@ const PaymentForm = ({xumm, fromAccount}) => {
       [name]: value
     }));  
   };  
-
 
   /**
    * create a payment payload
@@ -217,7 +352,8 @@ const PaymentForm = ({xumm, fromAccount}) => {
       ){
         setTxStatus(1);
         setTxStatusMessage(`Payment signed.`);
-        wsclient.close();
+        setPaymentPayload(null);
+        client.close();
 
         // wait 5 seconds and then clear the message
         setTimeout(function () {
@@ -236,25 +372,28 @@ const PaymentForm = ({xumm, fromAccount}) => {
 
 
   return (
-      <div className="flex flex-row items-center justify-center">
-
-        {txStatusMessage && <></>}
-        {websocketMessage && <>Got websocketMessage</>}
-        
-        
-        <form className="w-full mb-3 md:w-fit">
-          <div className="flex flex-col md:flex-row items-center border-b border-blue-500 
-            py-2 w-full justify-center md:justify-between">
-            <input 
-              name="destination"
-              value={formState.destination}
-              onChange={handleInputChange}
-              className="m-1 rounded border-2 border-slate-500 w-3/4 text-lg text-center appearance-none bg-slate-800 text-blue-300 mr-3 py-1 px-2 leading-tight focus:outline-none" type="text" placeholder="Enter account to pay 1 XRP" aria-label="XRP Account"/>
-            <button onClick={()=>payAccount()} className="flex-shrink-0 bg-blue-500 hover:bg-blue-700 border-blue-500 hover:border-blue-700 text-sm border-4 text-white py-1 px-2 rounded" type="button">
-              Create Payment TX
-            </button>
-          </div>
-        </form>
+      <div className="flex flex-col items-center justify-center">
+        <div className="flex flex-col justify-center w-full">
+          {txStatusMessage && <div className="w-full text-center text-2xl text-slate-400 italic">{txStatusMessage}</div>}
+          {websocketMessage && <WebsocketMessageViewer message={websocketMessage} />}
+          {paymentPayload && <PaymentPayloadViewer payload={paymentPayload} />}       
+        </div>
+    
+        <div className="w-full">
+          <form className="w-full mb-3 md:w-fit">
+            <div className="flex flex-col md:flex-row items-center border-b border-blue-500 
+              py-2 w-full justify-center md:justify-between">
+              <input 
+                name="destination"
+                value={formState.destination}
+                onChange={handleInputChange}
+                className="m-1 rounded border-2 border-slate-500 w-3/4 text-lg text-center appearance-none bg-slate-800 text-blue-300 mr-3 py-1 px-2 leading-tight focus:outline-none" type="text" placeholder="Enter account to pay 1 XRP" aria-label="XRP Account"/>
+              <button onClick={()=>payAccount()} className="flex-shrink-0 bg-blue-500 hover:bg-blue-700 border-blue-500 hover:border-blue-700 text-sm border-4 text-white py-1 px-2 rounded" type="button">
+                Create Payment TX
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
   );
 };
@@ -313,9 +452,6 @@ export function App() {
 
     }, []);
 
-
-
-
     const loginXumm = () => {
         xummSDK.authorize().then((res) => { 
           console.log("authorized", res);   
@@ -338,7 +474,6 @@ export function App() {
           console.log("logout promise result", res);
           setIsAuthorized(false);
           setIdentity(null);
-          setRuntime(null);
         }).catch ((err) => {
           console.log("error with logout", err);
         });
@@ -350,7 +485,7 @@ export function App() {
           <img src={imgLogo} alt="logo" className='w-8 h-8 rounded-full mt-1'/> 
           <span className='ml-2 text-4xl'>zoetic</span></div>
         <div className='text-lg flex flex-col justify-end md:justify-start md:flex-row'>
-          <div className='m-1 p-1 hover:underline hover:cursor-pointer'>Xumm-Universal-SDK</div>
+          {/* <div className='m-1 p-1 hover:underline hover:cursor-pointer'>Xumm-Universal-SDK</div> */}
           {isAuthorized ? 
             <div className='m-1'>
               <div onClick={()=>logoutXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1 flex flex-row items-center'>
@@ -395,6 +530,7 @@ export function App() {
 
         </div>
       </div>
+      <LinkedFooter xumm={xumm}/>
       
     </>)
 };

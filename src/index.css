@@ -53,7 +53,8 @@
   }
 
   .sticky-footer {
-    @apply bg-gray-900;
+    @apply bg-gray-800;
+    @apply text-gray-100;
     /* @apply fixed; */
     @apply inset-x-0;
     @apply bottom-0;
