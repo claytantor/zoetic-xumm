@@ -75,7 +75,7 @@ const ExternalLinksViewer = ({links, xumm, title="Important Links"}) => {
       console.log("clicked link in xApp", url);
 
       xumm.then((xummSDK) => {
-        xummSDK.openBrowser({ url: url })
+        xummSDK.xapp.openBrowser({ url: url })
         .then(d => {
           // d (returned value) can be Error or return data:
           console.log('openBrowser response:', d instanceof Error ? d.message : d)
@@ -112,6 +112,7 @@ const ExternalLinksViewer = ({links, xumm, title="Important Links"}) => {
 const LinkedFooter = ({xumm}) => {
   const externalLinks = [
     { title: 'zoetic Home', url: 'https://zoetic.xurlpay.org/' },
+    { title: 'xApp Deeplink', url: 'https://xumm.app/detect/xapp:sandbox.a8f76d357322' },
     { title: 'Github', url: 'https://github.com/claytantor/zoetic-xumm' },
     { title: 'Terms of Service', url: 'https://zoetic.xurlpay.org/tos' },
     { title: 'Privacy Policy', url: 'https://zoetic.xurlpay.org/privacy' },
@@ -366,7 +367,9 @@ const PaymentForm = ({xumm, fromAccount}) => {
     }
 
     if (runtime.xapp) {
-      xumm.xapp.openSignRequest({ uuid: txResponse.uuid });  
+      xumm.then(xummSDK => {
+        xummSDK.xapp.openSignRequest({ uuid: txResponse.uuid });
+      });
     } 
   };
 
@@ -374,7 +377,9 @@ const PaymentForm = ({xumm, fromAccount}) => {
   return (
       <div className="flex flex-col items-center justify-center">
         <div className="flex flex-col justify-center w-full">
-          {txStatusMessage && <div className="w-full text-center text-2xl text-slate-400 italic">{txStatusMessage}</div>}
+          {txStatusMessage && txStatus === 1 ? <div className="w-full text-center text-2xl text-green-700 bg-green-200 italic p-2 rounded">{txStatusMessage}</div>:
+          <div className="w-full text-center text-2xl text-slate-300 italic p-2">
+            {txStatusMessage}</div>}
           {websocketMessage && <WebsocketMessageViewer message={websocketMessage} />}
           {paymentPayload && <PaymentPayloadViewer payload={paymentPayload} />}       
         </div>
