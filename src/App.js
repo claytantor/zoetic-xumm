@@ -363,7 +363,6 @@ const PaymentForm = ({xumm, fromAccount}) => {
           setTxStatus(1);
         }, 5000);
       };      
-      
     }
 
     if (runtime.xapp) {
