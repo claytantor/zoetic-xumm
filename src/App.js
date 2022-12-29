@@ -58,7 +58,22 @@ export function App() {
           console.log("loginXumm xummSDK", xummSDK.runtime);
           if(!xummSDK.runtime) return;
           setRuntime(xummSDK.runtime); 
-          setXummSDK(xummSDK);              
+          setXummSDK(xummSDK); 
+
+          /**
+           * IMPORTANT: dont worry about calling this when the api
+           * is not available, it just try to call what you need and it will be available after authorization. The promise will be resolved if the api is not available.
+           */
+          xummSDK.environment.bearer?.then(r => {
+            // if you use a backend such as axios, you can set the bearer token here for the default header
+            // ie. Axios.defaults.headers.common['Authorization'] = `Bearer ${r}`;
+            console.log('bearer', r);
+            setIsAuthorized(true);
+
+          }).catch((err) => {
+            console.log("error with bearer", err);
+          });
+
         });
 
     }, []);
@@ -77,17 +92,15 @@ export function App() {
     }
 
     return (<>
-      <div className='bg-pink-900 flex flex-row text-white justify-between p-2'>
+      <div className='bg-pink-900 flex flex-col text-white justify-start p-2 md:flex-row md:justify-between'>
         <div className='text-3xl'>zoetic</div>
-        <div className='text-lg flex flex-row justify-end p-1'>
-          {/* {runtime ? 
-            <div className='m-1 p-3'>Runtime</div> : 
-            <div className='m-1 p-3'>No Runtime</div>}      
-            https://github.com/XRPL-Labs/Xumm-Universal-SDK
-            */}
-          <div className='m-1 p-3 hover:underline hover:cursor-pointer'>Go To Xumm-Universal-SDK</div>
+        <div className='text-lg flex flex-col justify-end md:justify-start p-1 md:flex-row'>
+          <div className='m-1 p-1 hover:underline hover:cursor-pointer'>Xumm-Universal-SDK</div>
           {isAuthorized ? 
-            <div className='m-1'>Authorized</div> : 
+            <div className='m-1'>
+              <div onClick={()=>{}} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1'>
+                Logout</div>
+            </div> : 
             <div onClick={()=>loginXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1'>
               Login with xumm</div>}
         </div>
@@ -97,7 +110,8 @@ export function App() {
       <div className='bg-slate-900 flex flex-row justify-center'>
         <div className='p-5 m-5 flex flex-col justify-center'>
           <div className='w-full text-pink-400 text-center text-6xl'>zoetic</div>
-          <div id='logo' className='p-5 m-5 w-full'>
+          <div className='text-center'>An end to en application example for making a xApp using ReactJS, Tailwinds CSS, and the Xumm "Universal" SDK</div>
+          <div id='logo' className='p-5 m-5 w-full flex justify-center'>
             {isAuthorized ? <img src={imgLogo} alt="logo" className='w-64 h-64 animate-spin rounded-full'/>
             : <img src={imgLogo} alt="logo" className='w-64 h-64 rounded-full'/>}
           </div>
