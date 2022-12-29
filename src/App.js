@@ -114,8 +114,8 @@ const LinkedFooter = ({xumm}) => {
     { title: 'zoetic Home', url: 'https://zoetic.xurlpay.org/' },
     { title: 'xApp Deeplink', url: 'https://xumm.app/detect/xapp:sandbox.a8f76d357322' },
     { title: 'Github', url: 'https://github.com/claytantor/zoetic-xumm' },
-    { title: 'Terms of Service', url: 'https://zoetic.xurlpay.org/tos' },
-    { title: 'Privacy Policy', url: 'https://zoetic.xurlpay.org/privacy' },
+    { title: 'Terms of Service', url: 'https://zoetic.xurlpay.org/tos.html' },
+    { title: 'Privacy Policy', url: 'https://zoetic.xurlpay.org/privacy.html' },
     { title: 'Xumm-Universal-SDK', url: 'https://github.com/XRPL-Labs/Xumm-Universal-SDK' },
     { title: 'Tailwinds CSS Docs', url: 'https://tailwindcss.com/docs/installation' },
     { title: 'React Docs', url: 'https://reactjs.org/docs/getting-started.html' },
@@ -498,8 +498,10 @@ export function App() {
                 {identity?.picture ? <img className="w-8 h-8 m-1" src={identity.picture} alt="icon"/> : ""}
                 Logout {clientType}</div>
             </div> : 
-            <div onClick={()=>loginXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1'>
-              Login with xumm</div>}
+              <>
+              {runtime && runtime.browser && !runtime.xapp && <div onClick={()=>loginXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1'>
+                Login with xumm</div>}
+              </>}
         </div>
       </div>
 
