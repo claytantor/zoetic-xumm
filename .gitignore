@@ -25,3 +25,4 @@ yarn-error.log*
 src/env.js
 
 environment/deployment.json
+src/deployment.json
