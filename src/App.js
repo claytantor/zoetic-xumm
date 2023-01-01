@@ -127,9 +127,12 @@ const LinkedFooter = ({xumm}) => {
 
 };
 
-
+/**
+ * simple component to display of hashed data
+ * @param {*} param0 
+ * @returns 
+ */
 const HashedInfoViewer = ({hashedInfo, title="Hashed Data"}) => {
-
   let renderAttributes = (hashedInfo) => {
       if (hashedInfo) {
           const keys = Object.keys(hashedInfo);
@@ -220,7 +223,6 @@ const WebsocketMessageViewer = ({message, title="Message"}) => {
       </>
   );
 };
-
 
 const PaymentForm = ({xumm, fromAccount}) => {
 
@@ -372,7 +374,6 @@ const PaymentForm = ({xumm, fromAccount}) => {
       });
     } 
   };
-
 
   return (
       <div className="flex flex-col items-center justify-center">
