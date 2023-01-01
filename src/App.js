@@ -2,8 +2,6 @@ import React, {useEffect, useState } from "react"
 import { Xumm } from "xumm";
 import {xummConfig} from "./env";
 
-import { w3cwebsocket as W3CWebSocket } from "websocket";
-
 import imgLogo from "./assets/img/logo.jpeg";
 
 import "./index.css";
@@ -137,7 +135,7 @@ const HashedInfoViewer = ({hashedInfo, title="Hashed Data"}) => {
               return <div className="flex">No account data</div>;
           } else {
               return keys.map((key, index) => (
-                  <div className="w-32 md:w-64 flex flex-col md:h-32 text-yellow-200
+                  <div className="w-32 md:w-64 flex flex-col min-h-fit text-yellow-200
                    bg-slate-800 m-1 rounded p-1 break-words" key={index}>
                       <div className="text-xs font-bold text-purple-300">{key}</div> 
                       {hashedInfo[key] && 
@@ -225,17 +223,15 @@ const WebsocketMessageViewer = ({message, title="Message"}) => {
 const PaymentForm = ({xumm, fromAccount}) => {
 
   const [formState, setFormState] = useState({'destination': ''});
-  const [payload, setPayload] = useState(null);
   const [runtime, setRuntime] = useState(null);
 
   /** state for the tx listening */
   const [websocketMessage, setWebsocketMessage] = useState(null);
   const [paymentPayload, setPaymentPayload] = useState(null);
-  const [wsclient, setWsclient] = useState();
   const [txStatus, setTxStatus] = useState(0);
   const [txStatusMessage, setTxStatusMessage] = useState(null);
   
-  
+
   /**
    * detect if this is a mobile device
    */
@@ -277,100 +273,62 @@ const PaymentForm = ({xumm, fromAccount}) => {
       }
   };
 
-  /**
-   * this is the function that will be called when the 
-   * user clicks the pay button, it tells the xumm sdk
-   * to create a payload, the app then needs to listen
-   * for the payload status
-   */
+
   const payAccount = () => {
     console.log("payAccount");
     setTxStatusMessage("Creating payload");
     xumm.then(xummSDK => {
-      xummSDK.payload?.create({
-        txjson: paymentPayloadRequest(fromAccount, formState.destination)})
-      .then(r => {
-        console.log('payload', r);
-        setPayload(r);
-        handleTxPayload(r);
-        setTxStatusMessage("Handling the TX Sign request to the Wallet.");
-      });
+      const paymentPayload = { 
+        txjson: paymentPayloadRequest(fromAccount, formState.destination)}
+
+        handleTxPayloadNativeWS(xummSDK, paymentPayload);
+
     });
   };
 
-
   /**
+   * uses the create and subscribe method from the xumm
+   * SDK to listen for events
    * 
-   * if this is a browser we want to show the QR code
-   * if this is browser and mobile we want present a button to open the xumm app
-   * if this is a xapp we want to send the payload to the xapp for signing
-   * 
-   * we need a websocket to listen for the payload status
-   * 
-   * this component will display the attributes 
-   * of the websocet message
-   * 
-   * @param {{
-        "uuid": "e7f7aa4f-1f4b-4714-8b57-22ca7562ab3e",
-        "next": {
-          "always": "https://xumm.app/sign/e7f7aa4f-1f4b-4714-8b57-22ca7562ab3e",
-          "no_push_msg_received": "https://xumm.app/sign/e7f7aa4f-1f4b-4714-8b57-22ca7562ab3e/qr"
-        },
-        "refs": {
-          "qr_png": "https://xumm.app/sign/e7f7aa4f-1f4b-4714-8b57-22ca7562ab3e_q.png",
-          "qr_matrix": "https://xumm.app/sign/e7f7aa4f-1f4b-4714-8b57-22ca7562ab3e_q.json",
-          "qr_uri_quality_opts": ["m", "q", "h"],
-          "websocket_status": "wss://xumm.app/sign/e7f7aa4f-1f4b-4714-8b57-22ca7562ab3e"
-        },
-        "pushed": true
-      }} txResponse 
+   * @param {*} xummSDK 
+   * @param {*} xummPayload 
    */
-  const handleTxPayload = (txResponse) => {
-    console.log("handleTxPayload", txResponse);
-    setPaymentPayload(txResponse);
+  const handleTxPayloadNativeWS = async (xummSDK, xummPayload) => {
+    try {
+  
+      const pong = await xummSDK.ping()
+      console.log(pong.application)
+  
+      const payloadResponse = xummSDK.payload.createAndSubscribe(xummPayload, e => {
+        console.log("event subscription",e.data);
+        setWebsocketMessage(e.data);
 
-    const client = new W3CWebSocket(txResponse.refs.websocket_status);
-    setWsclient(client);
-
-    client.onopen = () => {
-      console.log('WebSocket Client Connected');
-    };
-
-    client.onclose = () => {
-      console.log('WebSocket Client Closed');
-    };
-
-    client.onmessage = (message) => {
-      const dataFromServer = JSON.parse(message.data);
-      setWebsocketMessage(dataFromServer);
-      console.log('got message', dataFromServer);
-
-      let keys = Object.keys(dataFromServer);
-      if (
-        keys.includes('payload_uuidv4') && 
-        keys.includes('signed') && 
-        dataFromServer.signed === true
-      ){
-        setTxStatus(1);
-        setTxStatusMessage(`Payment signed.`);
-        setPaymentPayload(null);
-        client.close();
-
-        // wait 5 seconds and then clear the message
-        setTimeout(function () {
-          setWebsocketMessage(null);
-          setTxStatusMessage(null);
+        if (typeof e.data.signed !== 'undefined') {
           setTxStatus(1);
-        }, 5000);
-      };      
-    }
+          setTxStatusMessage(`Payment signed.`);
+          setPaymentPayload(null);
+          setFormState({'destination': ''});
 
-    if (runtime.xapp) {
-      xumm.then(xummSDK => {
-        xummSDK.xapp.openSignRequest({ uuid: txResponse.uuid });
+          // wait 5 seconds and then clear the message
+          setTimeout(function () {
+            setWebsocketMessage(null);
+            setTxStatusMessage(null);
+            setTxStatus(0);
+          }, 5000);
+            return e.data
+          };
+
       });
-    } 
-  };
+  
+      const r = await payloadResponse
+      setPaymentPayload(await r.created);
+      setTxStatusMessage("Listening for the TX Sign request to the Wallet.");
+
+    } catch (e) {
+      console.log({error: e.message, stack: e.stack})
+    }
+  }
+
 
 
   return (
@@ -384,7 +342,7 @@ const PaymentForm = ({xumm, fromAccount}) => {
         </div>
     
         <div className="w-full flex flex-row justify-center">
-          <form className="w-full mb-3 md:w-fit">
+          {!paymentPayload && <form className="w-full mb-3 md:w-fit">
             <div className="flex flex-col md:flex-row items-center border-b border-blue-500 
               py-2 w-full justify-center md:justify-between">
               <input 
@@ -396,7 +354,7 @@ const PaymentForm = ({xumm, fromAccount}) => {
                 Create Payment TX
               </button>
             </div>
-          </form>
+          </form>}
         </div>
       </div>
   );
