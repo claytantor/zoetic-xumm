@@ -6,6 +6,7 @@ import imgLogo from "./assets/img/logo.jpeg";
 
 import "./index.css";
 import './App.css';
+import deployment from './deployment.json';
 
 const make = async () => {
     const xumm = await new Xumm(xummConfig.AppId)
@@ -100,7 +101,7 @@ const ExternalLinksViewer = ({links, xumm, title="Important Links"}) => {
   return (
     <div className="w-full flex flex-col">
       <div className="text-2xl text-white">{title}</div>
-      <div className="flex flex-wrap min-h-[100px]">
+      <div className="flex flex-wrap">
         {renderUrls(links)}
       </div>
     </div>
@@ -119,8 +120,9 @@ const LinkedFooter = ({xumm}) => {
     { title: 'React Docs', url: 'https://reactjs.org/docs/getting-started.html' },
   ]
 
-  return (<footer className="mt-auto sticky-footer p-2">
+  return (<footer className="mt-auto fixed bottom-0 sticky-footer p-2 min-h-[100px]">
     <ExternalLinksViewer links={externalLinks} xumm={xumm}/>
+    <HashedInfoViewer hashedInfo={deployment} title="Deployment Info"/>
     </footer>);
 
 };
