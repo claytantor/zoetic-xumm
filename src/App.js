@@ -54,7 +54,7 @@ const xumm = make();
  * 
  * @param {*} param0 
  */
-const ExternalLinksViewer = ({links, xumm, title="Important Links"}) => {
+const ExternalLinksViewer = ({links, xumm, title="Important Links", showTitle=true}) => {
 
   const [runtime, setRuntime] = useState();
 
@@ -100,7 +100,7 @@ const ExternalLinksViewer = ({links, xumm, title="Important Links"}) => {
 
   return (
     <div className="w-full flex flex-col">
-      <div className="text-2xl text-white">{title}</div>
+      {showTitle && <div className="text-2xl text-white">{title}</div>}
       <div className="flex flex-wrap">
         {renderUrls(links)}
       </div>
@@ -120,10 +120,15 @@ const LinkedFooter = ({xumm}) => {
     { title: 'React Docs', url: 'https://reactjs.org/docs/getting-started.html' },
   ]
 
-  return (<footer className="mt-auto fixed bottom-0 sticky-footer p-2 min-h-[100px]">
-    <ExternalLinksViewer links={externalLinks} xumm={xumm}/>
-    <HashedInfoViewer hashedInfo={deployment} title="Deployment Info"/>
-    </footer>);
+  return (
+    <div className="flex flex-col">
+      <div className="flex flex-row items-center mb-2">
+          <img src={imgLogo} alt="logo" className='w-6 h-6 rounded-full mt-1'/> 
+          <span className='ml-2 text-3xl'>zoetic</span>
+      </div>
+      <ExternalLinksViewer links={externalLinks} xumm={xumm} showTitle={false}/>
+      <HashedInfoViewer hashedInfo={deployment} title="Deployment Info" showTitle={false}/>
+    </div>);
 
 };
 
@@ -132,7 +137,7 @@ const LinkedFooter = ({xumm}) => {
  * @param {*} param0 
  * @returns 
  */
-const HashedInfoViewer = ({hashedInfo, title="Hashed Data"}) => {
+const HashedInfoViewer = ({hashedInfo, title="Hashed Data", showTitle=true}) => {
   let renderAttributes = (hashedInfo) => {
       if (hashedInfo) {
           const keys = Object.keys(hashedInfo);
@@ -155,7 +160,7 @@ const HashedInfoViewer = ({hashedInfo, title="Hashed Data"}) => {
       <>
           {hashedInfo && 
            <div className="flex flex-col">       
-              <div className="flex flex-row text-heading text-2xl">{title}</div>
+              { showTitle && <div className="flex flex-row text-heading text-2xl">{title}</div>}
               <div className="flex flex-wrap w-full bg-slate-700 p-1">{renderAttributes(hashedInfo)}</div>               
           </div>}
       </>
@@ -445,60 +450,61 @@ export function App() {
     };
 
     return (<>
-      <div className='bg-pink-900 flex flex-col text-white justify-start p-1 md:flex-row md:justify-between w-full'>
-        <div className='m-1 mt-2 flex flex-row items-center justify-start'>
-          <img src={imgLogo} alt="logo" className='w-8 h-8 rounded-full mt-1'/> 
-          <span className='ml-2 text-4xl'>zoetic</span></div>
-        <div className='text-lg flex flex-col justify-end md:justify-start md:flex-row'>
-          {/* <div className='m-1 p-1 hover:underline hover:cursor-pointer'>Xumm-Universal-SDK</div> */}
-          {isAuthorized ? 
-            <div className='m-1'>
-              <div onClick={()=>logoutXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1 flex flex-row items-center'>
+      <div class="flex flex-col h-screen justify-between">
+        <header class="h-fit bg-pink-900 flex flex-row justify-between">
 
-                {identity?.picture ? <img className="w-8 h-8 m-1" src={identity.picture} alt="icon"/> : ""}
-                Logout {clientType}</div>
-            </div> : 
-              <>
-              {runtime && runtime.browser && !runtime.xapp && <div onClick={()=>loginXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1'>
-                Login with xumm</div>}
-              </>}
-        </div>
-      </div>
+          <div className='m-1 mt-2 flex flex-row items-center justify-start'>
+            <img src={imgLogo} alt="logo" className='w-8 h-8 rounded-full mt-1'/> 
+            <span className='ml-2 text-4xl'>zoetic</span></div>
+            <div className='text-lg flex flex-col justify-end md:justify-start md:flex-row'>
+              {isAuthorized ? 
+                <div className='m-1'>
+                  <div onClick={()=>logoutXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1 flex flex-row items-center'>
 
-      <div className='bg-slate-900 flex flex-row justify-center'>
-        <div className='p-2 flex flex-col justify-center'>
-          <div className='w-full text-pink-400 text-center text-6xl'>zoetic</div>
-          <div className='text-center'>An complete application example for making a xApp using ReactJS, Tailwinds CSS, and the Xumm "Universal" SDK</div>
+                    {identity?.picture ? <img className="w-8 h-8 m-1" src={identity.picture} alt="icon"/> : ""}
+                    Logout {clientType}</div>
+                </div> : 
+                  <>
+                  {runtime && runtime.browser && !runtime.xapp && <div onClick={()=>loginXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1'>
+                    Login with xumm</div>}
+                  </>}
+            </div>
+        </header>
+        <main class="mb-auto p-4 h-fit">
+          <div className='m-2 flex flex-col justify-center'>
+            <div className='w-full text-pink-400 text-center text-6xl'>zoetic</div>
+            <div className='text-center'>An complete application example for making a xApp using ReactJS, Tailwinds CSS, and the Xumm "Universal" SDK</div>
 
-          {identity?.sub && <div className='md:text-2xl text-center text-blue-400 font-mono'>{identity.sub}</div>}
+            {identity?.sub && <div className='md:text-2xl text-center text-blue-400 font-mono'>{identity.sub}</div>}
 
-          <div id='logo' className='p-1 m-1 w-full flex justify-center'>
-            {isAuthorized ? 
-            <></>: 
-            <img src={imgLogo} alt="logo" className='w-64 h-64 rounded-full'/>}
+            <div id='logo' className='p-1 m-1 w-full flex justify-center'>
+              {isAuthorized ? 
+              <></>: 
+              <img src={imgLogo} alt="logo" className='w-64 h-64 rounded-full'/>}
+            </div>
+
+            {isAuthorized && <PaymentForm xumm={xumm}/>} 
+
+            {identity && <>
+              <div className='code mb-4 w-fit'>
+                <div className='text-xs break-words w-full'>
+                <HashedInfoViewer hashedInfo={identity} title="Identity"/></div>
+              </div>       
+            </>}
+            {runtime && <>
+              <div className='code mb-4 w-fit'>
+                <div className='text-xs break-words w-full'>
+                  {runtime?.browser && <HashedInfoViewer hashedInfo={runtime.browser} title="Runtime"/>}
+                </div>
+              </div>       
+            </>} 
+
           </div>
-
-          {isAuthorized && <PaymentForm xumm={xumm}/>} 
-
-          {identity && <>
-            <div className='code mb-4 w-fit'>
-              <div className='text-xs break-words w-full'>
-              <HashedInfoViewer hashedInfo={identity} title="Identity"/></div>
-            </div>       
-          </>}
-          {/* {runtime && <div>runtime found</div>} */}
-          {runtime && <>
-            <div className='code mb-4 w-fit'>
-              <div className='text-xs break-words w-full'>
-                {runtime?.browser && <HashedInfoViewer hashedInfo={runtime.browser} title="Runtime"/>}
-              </div>
-            </div>       
-          </>} 
-
-        </div>
+        </main>
+        <footer class="h-fit bg-black p-3">
+            <LinkedFooter xumm={xumm}/>
+        </footer>
       </div>
-      <LinkedFooter xumm={xumm}/>
-      
     </>)
 };
 
