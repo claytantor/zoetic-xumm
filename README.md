@@ -9,8 +9,7 @@ The project includes all implementations required to run a xumm app, a browser b
 
 
 ## Xumm API
-xApps are WebApps, embedded in XUMM for a great user experience. They add value (tooling, wizards) for end users, using Sign Requests and their Web UI to help users perform tasks on the XRPL and beyond.
-
+The xumm platform allows developers and app users to "meet up". While app users can simply use the xumm app to track their accounts, balances and transactions, the true power of xumm is the platform made available to developers for their applications and their end users.
 
 [Xumm-Universal-SDKT](https://github.com/XRPL-Labs/Xumm-Universal-SDK)
 
@@ -145,6 +144,9 @@ There are two ways to then sign transactions by the xumm app:
 * xApp - the xumm app uses the `xumm.xapp.openSignRequest({ uuid: '...' })` method to open the transaction in the xumm app.
 
 ## xApp Use Case
+
+xApps are WebApps, embedded in XUMM for a great user experience. They add value (tooling, wizards) for end users, using Sign Requests and their Web UI to help users perform tasks on the XRPL and beyond.
+
 ![Xumm-Universal-SDKT](./out/docs/puml/browser-usecase/browser-usecase.png)
 
 
