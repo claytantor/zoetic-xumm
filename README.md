@@ -8,7 +8,7 @@ A proof of concept for a xumm app demonstrating the concept of "Hybrid xApps" wh
 The project includes all implementations required to run a xumm app, a browser based OAuth2 flow and a server side JWT backend. The project is a simple FastAPI app that can be run locally or deployed to a server. The app is a simple stub that can be used to build any new xapp, as a ReactJS app that can be built and deployed to a server or as a static site.
 
 
-# Xumm API
+## Xumm API
 xApps are WebApps, embedded in XUMM for a great user experience. They add value (tooling, wizards) for end users, using Sign Requests and their Web UI to help users perform tasks on the XRPL and beyond.
 
 
