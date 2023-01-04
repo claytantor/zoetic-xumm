@@ -1,0 +1,82 @@
+@startuml
+
+actor "User" as user
+
+package "Xumm Mobile Wallet" {
+    usecase "Sign Payment Transaction" as uc_xumm_sign_payment
+    usecase "Sign Authourize User" as uc_xumm_auth
+    usecase "Scan Login QR" as uc_scan_login
+    usecase "Scan Payment QR" as uc_scan_payment
+    usecase "Load Website into\nClient xApp" as uc_load_website_xumm
+    usecase "xApp Deep Link" as uc_xapp_deep_link
+    usecase "Provide authToken" as uc_xapp_auth_token
+
+}
+
+package "Xumm Universal SDK" {
+    package "Xumm PKCE" {
+        usecase "Get Access Token" as uc_pkce_get_token
+        usecase "Open OAUTH2 Popup" as uc_pkce_popup
+    }
+    package "Xumm JWT" {
+        usecase "Make SDK from JWT" as xumm_jwt
+    }
+    package "Xumm API" {
+        usecase "Create Payment Payload" as uc_xumm_api_create_payment
+        usecase "Logout User" as uc_xumm_api_logout
+        usecase "Authorize User" as uc_xumm_api_auth
+    }
+}
+
+
+
+package "Web Client Application (ReactJs)" {
+    usecase "Click Login" as uc_login
+    usecase "Click Logout" as uc_logout
+    usecase "Load Website\ninto Client\n via URL" as uc_load_website
+    usecase "Enter Payment Form" as uc_payment_form
+    usecase "Use Paylaod to\nShow Payment QR" as uc_show_payment_qr
+}
+
+package "AWS Cloudfront & S3 (Static)" {
+    usecase "Serve Static Files" as uc_static_files
+}
+
+'start app as xapp
+user --> uc_xapp_deep_link : Click Deeplink
+uc_xapp_deep_link-> uc_load_website_xumm : Load Website\n inide of xumm
+uc_load_website_xumm --> uc_static_files : Load Static Files
+
+user -> uc_scan_payment : Scan Payment QR
+uc_scan_payment --> uc_xapp_deep_link : link to xapp
+
+'login as xapp
+uc_xapp_deep_link --> uc_xapp_auth_token : Provide Auth Token
+' uc_xapp_auth_token --> uc_xumm_auth : Sign Auth
+' uc_xumm_auth --> uc_xumm_auth : Sign Auth
+uc_xapp_auth_token->xumm_jwt : Make SDK from JWT
+xumm_jwt-->uc_xumm_api_auth : Authorize User
+
+
+'start app as browser app
+user --> uc_load_website : Load Website
+uc_load_website --> uc_static_files : Load Static Files
+
+'login as browser app
+uc_load_website --> uc_login : Click Login
+uc_login --> uc_pkce_popup : Open OAUTH2 Popup
+uc_pkce_popup --> uc_pkce_get_token : Get Access Token
+uc_pkce_get_token-->uc_xumm_api_auth : Authorize User
+
+'payment
+user --> uc_payment_form : Enter Payment Form
+uc_payment_form --> uc_xumm_api_create_payment: create payment
+uc_xumm_api_create_payment --> uc_show_payment_qr : Show Payment QR
+
+'logout as browser app
+user --> uc_logout : Click Logout
+uc_logout --> uc_xumm_api_logout : Logout User
+
+
+
+@enduml
