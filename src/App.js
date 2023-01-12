@@ -128,6 +128,7 @@ const LinkedFooter = ({xumm}) => {
       </div>
       <ExternalLinksViewer links={externalLinks} xumm={xumm} showTitle={false}/>
       <HashedInfoViewer hashedInfo={deployment} title="Deployment Info" showTitle={false}/>
+      {/* <div className="flex flex-row items-center mb-2 justify-start">Use zoetic to make donations to this wallet: <span className="text-pink-500 ml-2 font-mono">rrnR8qAP8tczCbgD1gqt4RgcwTZPcSXyn2</span></div> */}
     </div>);
 
 };
@@ -364,6 +365,7 @@ const PaymentForm = ({xumm, fromAccount}) => {
             </div>
           </form>}
         </div>
+        <div className="flex flex-row items-center mb-2 justify-start">Use zoetic to make donations to this wallet: <span className="text-pink-500 ml-2 font-mono">rrnR8qAP8tczCbgD1gqt4RgcwTZPcSXyn2</span></div>
       </div>
   );
 };
