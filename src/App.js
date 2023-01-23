@@ -240,6 +240,7 @@ const PaymentForm = ({xumm, fromAccount}) => {
   const [paymentPayload, setPaymentPayload] = useState(null);
   const [txStatus, setTxStatus] = useState(0);
   const [txStatusMessage, setTxStatusMessage] = useState(null);
+  const [error, setError] = useState(null);
   
 
   /**
@@ -255,6 +256,8 @@ const PaymentForm = ({xumm, fromAccount}) => {
   }, []);
 
   const handleInputChange = event => {
+    setError(null);
+    setTxStatusMessage(null);
     const target = event.target
     let value = target.value
     const name = target.name
@@ -283,17 +286,40 @@ const PaymentForm = ({xumm, fromAccount}) => {
       }
   };
 
+  const isValidXRPAddress = (address) => {
+    // Check if the address is a string and 34 characters long
+    if (typeof address !== 'string' || address.length !== 34) {
+        return false;
+    }
+
+    // Check if the address starts with the letter "r"
+    if (address[0] !== 'r') {
+        return false;
+    }
+
+    // Check if the address contains only valid characters (alphanumeric and "-")
+    if (!/^[a-zA-Z0-9-]+$/.test(address)) {
+        return false;
+    }
+
+    return true;
+  }
 
   const payAccount = () => {
     console.log("payAccount");
     setTxStatusMessage("Creating payload");
-    xumm.then(xummSDK => {
-      const paymentPayload = { 
-        txjson: paymentPayloadRequest(fromAccount, formState.destination)}
 
-        handleTxPayloadNativeWS(xummSDK, paymentPayload);
-
-    });
+    if (!isValidXRPAddress(formState.destination)) {
+      setError("Invalid destination address");
+      return;
+    } else {
+      setTxStatusMessage("Creating payload");
+      xumm.then(xummSDK => {
+        const paymentPayload = { 
+          txjson: paymentPayloadRequest(fromAccount, formState.destination)}
+          handleTxPayloadNativeWS(xummSDK, paymentPayload);
+      });
+    };
   };
 
   /**
@@ -329,19 +355,25 @@ const PaymentForm = ({xumm, fromAccount}) => {
           };
 
       });
+      // .catch(e => {
+      //   console.log("error", e);
+      //   setError(e);
+      // });
   
       const r = await payloadResponse
       setPaymentPayload(await r.created);
       setTxStatusMessage("Listening for the TX Sign request to the Wallet.");
 
     } catch (e) {
-      console.log({error: e.message, stack: e.stack})
+      // console.log({error: e.message, stack: e.stack})
+      setError(e.message);
     }
   }
 
 
   return (
       <div className="flex flex-col items-center justify-center">
+        {error && <div className="w-full text-center text-2xl text-red-700 bg-red-200 italic p-2 rounded">{error}</div>}
         <div className="flex flex-col justify-center w-full">
           {txStatusMessage && txStatus === 1 ? <div className="w-full text-center text-2xl text-green-700 bg-green-200 italic p-2 rounded">{txStatusMessage}</div>:
           <div className="w-full text-center text-2xl text-slate-300 italic p-2">
@@ -467,7 +499,7 @@ export function App() {
                     Logout {clientType}</div>
                 </div> : 
                   <>
-                  {runtime && runtime.browser && !runtime.xapp && <div onClick={()=>loginXumm()} className='button-common bg-pink-800 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded p-3 m-1'>
+                  {runtime && runtime.browser && !runtime.xapp && <div onClick={()=>loginXumm()} className='button-common border-2 bg-blue-600 hover:bg-pink-400 hover:underline hover:cursor-pointer rounded-lg p-3 m-1'>
                     Login with xumm</div>}
                   </>}
             </div>
