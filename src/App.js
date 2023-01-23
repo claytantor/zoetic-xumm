@@ -357,9 +357,9 @@ const PaymentForm = ({xumm, fromAccount}) => {
                 name="destination"
                 value={formState.destination}
                 onChange={handleInputChange}
-                className="m-1 rounded border-2 border-slate-500 w-3/4 text-lg text-center appearance-none bg-slate-800 text-blue-300 mr-3 py-1 px-2 leading-tight focus:outline-none md:w-96" type="text" placeholder="Enter account to pay 1 XRP" aria-label="XRP Account"/>
+                className="m-1 rounded border-2 border-slate-500 w-3/4 text-lg text-center appearance-none bg-slate-800 text-blue-300 mr-3 py-1 px-2 leading-tight focus:outline-none md:w-96" type="text" placeholder="Enter account address" aria-label="XRP Account"/>
               <button onClick={()=>payAccount()} className="flex-shrink-0 bg-blue-500 hover:bg-blue-700 border-blue-500 hover:border-blue-700 text-sm border-4 text-white py-1 px-2 rounded" type="button">
-                Create Payment TX
+                Pay 1 XRP
               </button>
             </div>
           </form>}

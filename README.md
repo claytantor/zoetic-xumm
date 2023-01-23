@@ -51,7 +51,8 @@ This means that state management needs to be aware of which mode the app is runn
 {ott && isXApp && <> {ott.nodetype} XAPP</>}
 {openid && isWebApp && <> {openid.networkType} BROWSER</>}    
 ```
- yields the identity of the user:
+
+yields the identity of the user:
 
 ```
 sub "r9DvujRNfGrZr4nBjudEJJWFBNfkDfcwNA"
